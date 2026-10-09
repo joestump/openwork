@@ -291,6 +291,13 @@ export function createWorkspaceStore({
       ...(typeof input?.requireActivation === "boolean"
         ? { requireActivation: input.requireActivation }
         : {}),
+      // A local display preference: hides the OpenWork Cloud sign-in
+      // prompts (header button, sidebar account row) for someone who runs
+      // only their own providers. Carried only when explicitly true, so an
+      // absent key keeps today's behaviour. It never relaxes requireSignin:
+      // a build or file that forces sign-in still gets the forced sign-in
+      // gate, which is a separate surface.
+      ...(input?.disableCloud === true ? { disableCloud: true } : {}),
       ...(brandAppName ? { brandAppName } : {}),
       ...(brandLogoUrl ? { brandLogoUrl } : {}),
       ...(brandIconUrl ? { brandIconUrl } : {}),
@@ -486,7 +493,14 @@ export function createWorkspaceStore({
   }
 
   async function setDesktopBootstrapConfig(config) {
-    const normalized = normalizeDesktopBootstrapConfig(config);
+    // disableCloud is a user preference, not part of any control-plane
+    // handoff, so a rewrite that does not mention it (sign-in, connect link,
+    // control-plane URL change) keeps the value already on disk instead of
+    // silently dropping it. An explicit boolean in `config` still wins.
+    const preserved = typeof config?.disableCloud === "boolean"
+      ? config
+      : { ...config, disableCloud: readDesktopBootstrapConfigSync().disableCloud === true };
+    const normalized = normalizeDesktopBootstrapConfig(preserved);
     const outputPath = desktopBootstrapPath();
     const stamped = { ...normalized, writtenAt: new Date().toISOString() };
     await writeJsonFileAtomic(outputPath, stamped);

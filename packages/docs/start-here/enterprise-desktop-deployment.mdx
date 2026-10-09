@@ -50,6 +50,7 @@ If you manage the fleet with MDM (Jamf, Intune, or similar), distribute the ente
 | `requireSignin` | Yes | Whether the app requires organization sign-in before use. Enterprise builds enforce sign-in regardless of this value. |
 | `requireActivation` | No | Ignored by enterprise builds, which always require activation. Lets a public build opt into the activation gate. |
 | `brandAppName`, `brandLogoUrl`, `brandIconUrl` | No | Organization branding shown in the app. |
+| `disableCloud` | No | `true` declares that this install does not use OpenWork Cloud. The app hides every surface that needs a Cloud account: the **Sign in** prompts (session header, sidebar account row, command palette, model picker, limit notices), Dashboard, Automations, Calendar and saved apps (direct links redirect home), the **Account** and **Usage** settings and their General card, organization providers on **AI Providers**, the Advanced **Organization server** and Cloud MCP diagnostics, the Library's Cloud previews, sign-up banner and Connections filter, built-app sharing, the OpenWork Models promos, and the activity bell. Library stays for local skills and MCP servers, and the free Auto model keeps its own off switch. It never relaxes `requireSignin`. The app keeps it when it rewrites this file; remove it to bring Cloud back. |
 | `writtenAt` | Yes | ISO 8601 timestamp. When more than one bootstrap file exists, the valid configuration with the newest `writtenAt` wins. |
 
 Deployment details worth knowing:

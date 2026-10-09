@@ -9,6 +9,7 @@ import { useSessionActivityStore } from "../session/status/session-activity-stor
 import { useCheckDesktopRestriction } from "./desktop-config-provider";
 import { autoAccessRefreshEvent, autoPickerCopy, autoQuietlyUnavailable, autoWallCopy, freeAutoSwitchedOff, openAlternativeModelPicker, type AutoPickerState, type AutoAccessWall, type DesktopFreeAccessStatus } from "@/app/lib/inference-access";
 import { useWorkspaceMaybe } from "@/react-app/shell/workspace-provider";
+import { useShellConfig } from "@/react-app/shell/shell-config";
 import { useDenAuth, type DenAuthStore } from "./den-auth-provider";
 import { isDesktopRuntime } from "@/app/utils";
 import { readDenSettings } from "@/app/lib/den";
@@ -80,7 +81,10 @@ export function AutoPickerRecovery({ state, code, resetsAt, onRetry, onReload, h
   const checkRestriction = useCheckDesktopRestriction();
   const activeWork = useSessionActivityStore((store) => Object.values(store.statusesByWorkspaceId[workspace?.workspaceId ?? ""] ?? {}).some((status) => ["thinking", "responding", "compacting", "waiting"].includes(status)));
   const observed = useObservedAutoAccessStatus();
-  const copy = autoPickerCopy(state, auth.isSignedIn, observed?.minimumVersion, code ?? observed?.code, resetsAt ?? observed?.allowance?.resetsAt);
+  const { config: shellConfig } = useShellConfig();
+  // Without OpenWork Cloud there is nothing to sign in to: read the copy as a
+  // signed-in member does, which offers another model instead of a sign-in.
+  const copy = autoPickerCopy(state, auth.isSignedIn || !shellConfig.cloudFeatures, observed?.minimumVersion, code ?? observed?.code, resetsAt ?? observed?.allowance?.resetsAt);
   const run = async (action: () => void | Promise<unknown>) => {
     if (busy) return;
     setBusy(true); setFailed(false);
@@ -133,21 +137,24 @@ export function useAutoAccess(available: boolean, override?: AutoAccessWorkspace
 
 function AutoAccessFooterContent({ available, syncing = false }: { available: boolean; syncing?: boolean }) {
   const { query, auth } = useAutoAccess(available);
+  const { config: shellConfig } = useShellConfig();
   if ((!available && !syncing) || freeAutoSwitchedOff(query.data) || autoQuietlyUnavailable(query.data)) return null;
   // Every other Auto state has its own notice above the picker footer (Paper "Availability and recovery").
   const status = !syncing && query.data?.state === "ready" && auth.status === "signed_out" ? "Auto is free on this device" : null;
   if (!status) return null;
   return <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
     <span role="status">{status}</span>
-    {auth.status === "signed_out" ? <Button size="sm" variant="ghost" onClick={() => openAutoSignIn()}>Sign in to sync</Button> : null}
+    {auth.status === "signed_out" && shellConfig.cloudFeatures ? <Button size="sm" variant="ghost" onClick={() => openAutoSignIn()}>Sign in to sync</Button> : null}
   </div>;
 }
 
 export function AutoAccessNotice({ wall, sessionId, workspaceId, recovery }: { wall: AutoAccessWall; sessionId: string; workspaceId?: string; recovery?: { owner: RejectedTurnOwner; id: string } }) {
   const auth = useDenAuth();
-  const copy = autoWallCopy(wall, auth.isSignedIn);
+  const { config: shellConfig } = useShellConfig();
+  // Without OpenWork Cloud, read the copy as a signed-in member does (no sign-in offer).
+  const copy = autoWallCopy(wall, auth.isSignedIn || !shellConfig.cloudFeatures);
   // Signing in raises the free limit; offer it wherever the notice reads as the limit.
-  const offerSignIn = auth.status === "signed_out" && ["limit", "update", "not_offered"].includes(wall.state)
+  const offerSignIn = shellConfig.cloudFeatures && auth.status === "signed_out" && ["limit", "update", "not_offered"].includes(wall.state)
     && wall.code !== "free_not_enrolled" && wall.code !== "managed_models_disabled_for_dpa";
   return <div data-testid="auto-access-wall" data-state={wall.state}>
     <TaskRecovery compact state="paused" title={copy.title} description={copy.detail} technicalDetails={copy.technicalDetails}

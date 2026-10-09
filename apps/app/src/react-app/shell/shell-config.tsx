@@ -1,5 +1,8 @@
 /** @jsxImportSource react */
-import { createContext, useCallback, use, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, use, useEffect, useMemo, useState, type ReactNode } from "react";
+
+import { readDenBootstrapConfig, type DenBootstrapConfig } from "@/app/lib/den";
+import { denSettingsChangedEvent } from "@/app/lib/den-session-events";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -18,6 +21,13 @@ export type ShellConfig = {
   feedbackButton: boolean;
   /** Show the Cloud sign-in button when not signed in. */
   cloudSignin: boolean;
+  /**
+   * Show surfaces that only work with an OpenWork Cloud account: Dashboard,
+   * Automations, saved apps, the Account and Usage settings, organization
+   * providers, cloud Library previews, and every sign-in upsell. Off means
+   * this install does not use OpenWork Cloud at all.
+   */
+  cloudFeatures: boolean;
   /** Show the welcome/onboarding page for new users. */
   welcomePage: boolean;
   /** Show starter task cards in empty sessions. */
@@ -43,6 +53,7 @@ export const DEFAULT_SHELL_CONFIG: ShellConfig = {
   docsButton: true,
   feedbackButton: true,
   cloudSignin: true,
+  cloudFeatures: true,
   welcomePage: true,
   starterCards: true,
   modelPicker: true,
@@ -78,6 +89,32 @@ function writeShellConfig(config: ShellConfig): void {
   }
 }
 
+/**
+ * The config the shell actually renders: the stored (localStorage) config with
+ * install-level policy from desktop-bootstrap.json applied on top. Bootstrap
+ * policy only ever hides: `disableCloud: true` means the install does not
+ * use OpenWork Cloud, so it forces off the sign-in prompts (`cloudSignin`),
+ * every surface that needs a Cloud account (`cloudFeatures`), and the activity
+ * bell, whose only writer is the Cloud member-activity sync. An absent key
+ * leaves the stored value alone. The stored config is never rewritten with it,
+ * so removing the key from the file restores everything.
+ */
+export function resolveShellConfig(
+  stored: ShellConfig,
+  bootstrap: Pick<DenBootstrapConfig, "disableCloud">,
+): ShellConfig {
+  if (bootstrap.disableCloud !== true) return stored;
+  return { ...stored, cloudSignin: false, cloudFeatures: false, notifications: false };
+}
+
+function readBootstrapDisablesCloud(): boolean {
+  try {
+    return readDenBootstrapConfig().disableCloud === true;
+  } catch {
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Context                                                            */
 /* ------------------------------------------------------------------ */
@@ -92,6 +129,16 @@ const ShellConfigContext = createContext<ShellConfigContextValue | undefined>(un
 
 export function ShellConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ShellConfig>(readShellConfig);
+  const [disableCloud, setDisableCloud] = useState(readBootstrapDisablesCloud);
+
+  // The bootstrap can change under a running app (a re-read after the shell
+  // persists a new config dispatches this event), so follow it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => setDisableCloud(readBootstrapDisablesCloud());
+    window.addEventListener(denSettingsChangedEvent, sync);
+    return () => window.removeEventListener(denSettingsChangedEvent, sync);
+  }, []);
 
   const update = useCallback((patch: Partial<ShellConfig>) => {
     setConfig((prev) => {
@@ -107,8 +154,8 @@ export function ShellConfigProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<ShellConfigContextValue>(
-    () => ({ config, update, reset }),
-    [config, update, reset],
+    () => ({ config: resolveShellConfig(config, { disableCloud }), update, reset }),
+    [config, disableCloud, update, reset],
   );
 
   return (

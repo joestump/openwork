@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { t } from "../../../i18n";
+import { useShellConfig } from "../../shell/shell-config";
 
 /**
  * Signed out, a page that needs OpenWork Cloud has one primary action:
@@ -16,6 +17,10 @@ export function CloudSignInBanner(props: {
   onSignIn?: () => void;
   testId?: string;
 }) {
+  // An install that does not use OpenWork Cloud (desktop-bootstrap.json
+  // disableCloud) has nothing to sign in to, so the upsell never renders.
+  const { config: shellConfig } = useShellConfig();
+  if (!shellConfig.cloudFeatures) return null;
   return (
     <div data-testid={props.testId} className="flex items-center gap-4 rounded-xl border border-dls-border bg-dls-surface px-4 py-3">
       <div className="flex shrink-0 -space-x-1.5" aria-hidden>{props.media}</div>

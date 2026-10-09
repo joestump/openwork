@@ -48,6 +48,7 @@ import type { SettingsTab } from "../../../../app/types";
 import { cn } from "@/lib/utils";
 import { usePlatform } from "../../../kernel/platform";
 import { useCheckDesktopRestriction } from "../../cloud/desktop-config-provider";
+import { useShellConfig } from "../../../shell/shell-config";
 import {
   SettingsContent,
   SettingsPanel,
@@ -258,8 +259,9 @@ export type SettingsNavGroups = {
 export function useSettingsNavGroups(developerMode: boolean): SettingsNavGroups {
   const platform = usePlatform();
   const checkRestriction = useCheckDesktopRestriction();
+  const { config: shellConfig } = useShellConfig();
   const allowed = (tabs: SettingsTab[]) =>
-    tabs.filter((tab) => isSettingsTabAllowed({ tab, checkRestriction }));
+    tabs.filter((tab) => isSettingsTabAllowed({ tab, checkRestriction, cloudFeatures: shellConfig.cloudFeatures }));
   return {
     hub: allowed(["general"]),
     workspace: allowed(getWorkspaceSettingsTabs()),

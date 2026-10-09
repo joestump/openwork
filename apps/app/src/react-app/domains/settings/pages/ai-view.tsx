@@ -54,6 +54,8 @@ export type AiSettingsViewProps = {
   showOpenWorkModelsSyncing?: boolean;
   onDismissOpenWorkModels?: () => void | Promise<void>;
   cloudProvidersView?: ReactNode;
+  /** False when the install does not use OpenWork Cloud: no organization providers or sign-in copy. */
+  cloudFeatures?: boolean;
   autoPreferences?: DesktopFreePreferences | null;
   autoBusy?: boolean;
   autoError?: string | null;
@@ -89,8 +91,9 @@ export function GatewayConnectRow({ provider, busy, onConnect, onCancel }: {
   );
 }
 
-export function aiProvidersDescription(input: { signedIn: boolean; organizationName?: string }) {
+export function aiProvidersDescription(input: { signedIn: boolean; organizationName?: string; cloudFeatures?: boolean }) {
   const base = "Models your agents can use in this workspace. Keys you add here stay on this device.";
+  if (input.cloudFeatures === false) return base;
   return input.signedIn
     ? `${base} Providers from ${input.organizationName || "your organization"} are included automatically and run through the OpenWork Gateway.`
     : `${base} Sign in to OpenWork to also get the providers your organization already pays for.`;
@@ -117,7 +120,7 @@ export function AiSettingsView(props: AiSettingsViewProps) {
     <SettingsPanel>
       <SettingsPanelHeading className="max-w-xl">
         <SettingsPanelTitle>{getSettingsTabLabel("ai")}</SettingsPanelTitle>
-        <SettingsPanelDescription>{aiProvidersDescription({ signedIn, organizationName: props.organizationName })}</SettingsPanelDescription>
+        <SettingsPanelDescription>{aiProvidersDescription({ signedIn, organizationName: props.organizationName, cloudFeatures: props.cloudFeatures })}</SettingsPanelDescription>
       </SettingsPanelHeading>
       <Button className="shrink-0 self-start" disabled={locked || props.busy || props.providerAuthBusy || !ready} onClick={() => void props.onOpenProviderAuth()}>
         {locked ? <Lock className="size-4" /> : <Plus className="size-4" />}Connect a provider
@@ -179,7 +182,7 @@ export function AiSettingsView(props: AiSettingsViewProps) {
       {props.providerDisconnectError ? <SettingsNotice tone="error">{props.providerDisconnectError}</SettingsNotice> : null}
     </section>
 
-    {props.cloudProvidersView ?? (organization.length || props.gatewayConnectProviders?.length ? <section className="flex flex-col gap-3">
+    {props.cloudFeatures === false ? null : props.cloudProvidersView ?? (organization.length || props.gatewayConnectProviders?.length ? <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-medium text-dls-text">From {props.organizationName || "your organization"}</h2>
         {props.onOpenDen ? <Button variant="ghost" onClick={props.onOpenDen}>Open in Den</Button> : null}

@@ -17,6 +17,8 @@ import {
 
 import { t } from "../../../../i18n";
 import type { SettingsTab } from "../../../../app/types";
+import { CLOUD_ONLY_SETTINGS_TABS } from "../../../../app/cloud/desktop-app-restrictions";
+import { useShellConfig } from "../../../shell/shell-config";
 import { Button } from "@/components/ui/button";
 
 export type GeneralSettingsViewProps = {
@@ -80,6 +82,9 @@ function SettingsCard(props: {
 }
 
 export function GeneralSettingsView(props: GeneralSettingsViewProps) {
+  // Without OpenWork Cloud the Account tab is hidden, so its card goes too.
+  const { config: shellConfig } = useShellConfig();
+  const cloudFeatures = shellConfig.cloudFeatures;
   return (
     <div className="w-full max-w-3xl space-y-8">
       {/* Workspace settings */}
@@ -106,7 +111,7 @@ export function GeneralSettingsView(props: GeneralSettingsViewProps) {
           Global
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {globalCards.map((card) => (
+          {globalCards.filter((card) => cloudFeatures || !CLOUD_ONLY_SETTINGS_TABS.has(card.tab)).map((card) => (
             <SettingsCard
               key={card.tab}
               icon={card.icon}
