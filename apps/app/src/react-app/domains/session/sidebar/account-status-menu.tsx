@@ -285,7 +285,7 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
     status: denAuth.status,
     hasUser: user !== null,
   });
-  // hideCloudSignin (desktop-bootstrap.json) folds into shellConfig.cloudSignin.
+  // disableCloud (desktop-bootstrap.json) folds into shellConfig.cloudSignin.
   // Signed out with the prompts hidden, the row stays as the entry point to
   // Settings, Docs and Feedback, but stops asking for an OpenWork Cloud account.
   const hideSignIn = !shellConfig.cloudSignin;

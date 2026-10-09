@@ -197,7 +197,7 @@ export type DesktopBootstrapConfig = {
   requireSignin: boolean;
   requireActivation?: boolean;
   /** Hide the OpenWork Cloud sign-in prompts (header button, sidebar account row). */
-  hideCloudSignin?: boolean;
+  disableCloud?: boolean;
   brandAppName?: string | null;
   brandLogoUrl?: string | null;
   brandIconUrl?: string | null;

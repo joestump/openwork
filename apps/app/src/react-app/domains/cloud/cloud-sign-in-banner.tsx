@@ -18,7 +18,7 @@ export function CloudSignInBanner(props: {
   testId?: string;
 }) {
   // An install that does not use OpenWork Cloud (desktop-bootstrap.json
-  // hideCloudSignin) has nothing to sign in to, so the upsell never renders.
+  // disableCloud) has nothing to sign in to, so the upsell never renders.
   const { config: shellConfig } = useShellConfig();
   if (!shellConfig.cloudFeatures) return null;
   return (

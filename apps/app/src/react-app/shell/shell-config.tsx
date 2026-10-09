@@ -92,7 +92,7 @@ function writeShellConfig(config: ShellConfig): void {
 /**
  * The config the shell actually renders: the stored (localStorage) config with
  * install-level policy from desktop-bootstrap.json applied on top. Bootstrap
- * policy only ever hides: `hideCloudSignin: true` means the install does not
+ * policy only ever hides: `disableCloud: true` means the install does not
  * use OpenWork Cloud, so it forces off the sign-in prompts (`cloudSignin`),
  * every surface that needs a Cloud account (`cloudFeatures`), and the activity
  * bell, whose only writer is the Cloud member-activity sync. An absent key
@@ -101,15 +101,15 @@ function writeShellConfig(config: ShellConfig): void {
  */
 export function resolveShellConfig(
   stored: ShellConfig,
-  bootstrap: Pick<DenBootstrapConfig, "hideCloudSignin">,
+  bootstrap: Pick<DenBootstrapConfig, "disableCloud">,
 ): ShellConfig {
-  if (bootstrap.hideCloudSignin !== true) return stored;
+  if (bootstrap.disableCloud !== true) return stored;
   return { ...stored, cloudSignin: false, cloudFeatures: false, notifications: false };
 }
 
-function readBootstrapHidesCloudSignin(): boolean {
+function readBootstrapDisablesCloud(): boolean {
   try {
-    return readDenBootstrapConfig().hideCloudSignin === true;
+    return readDenBootstrapConfig().disableCloud === true;
   } catch {
     return false;
   }
@@ -129,13 +129,13 @@ const ShellConfigContext = createContext<ShellConfigContextValue | undefined>(un
 
 export function ShellConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ShellConfig>(readShellConfig);
-  const [hideCloudSignin, setHideCloudSignin] = useState(readBootstrapHidesCloudSignin);
+  const [disableCloud, setDisableCloud] = useState(readBootstrapDisablesCloud);
 
   // The bootstrap can change under a running app (a re-read after the shell
   // persists a new config dispatches this event), so follow it.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const sync = () => setHideCloudSignin(readBootstrapHidesCloudSignin());
+    const sync = () => setDisableCloud(readBootstrapDisablesCloud());
     window.addEventListener(denSettingsChangedEvent, sync);
     return () => window.removeEventListener(denSettingsChangedEvent, sync);
   }, []);
@@ -154,8 +154,8 @@ export function ShellConfigProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<ShellConfigContextValue>(
-    () => ({ config: resolveShellConfig(config, { hideCloudSignin }), update, reset }),
-    [config, hideCloudSignin, update, reset],
+    () => ({ config: resolveShellConfig(config, { disableCloud }), update, reset }),
+    [config, disableCloud, update, reset],
   );
 
   return (

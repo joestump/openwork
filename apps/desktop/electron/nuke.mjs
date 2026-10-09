@@ -485,7 +485,7 @@ export function sanitizeDesktopBootstrapConfig(input, writtenAt = new Date().toI
     baseUrl,
     ...(apiBaseUrl ? { apiBaseUrl } : {}),
     requireSignin: input.requireSignin === true,
-    ...(input.hideCloudSignin === true ? { hideCloudSignin: true } : {}),
+    ...(input.disableCloud === true ? { disableCloud: true } : {}),
     ...(brandAppName ? { brandAppName } : {}),
     ...(brandLogoUrl ? { brandLogoUrl } : {}),
     ...(brandIconUrl ? { brandIconUrl } : {}),

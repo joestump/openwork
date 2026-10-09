@@ -33,9 +33,9 @@ export function isOpenWorkModelsPromoEligibleForDenBaseUrl(baseUrl: string) {
 
 export function isOpenWorkModelsPromoEligible() {
   // An install that does not use OpenWork Cloud (desktop-bootstrap.json
-  // hideCloudSignin) gets no OpenWork Models upsell anywhere: the account-menu
+  // disableCloud) gets no OpenWork Models upsell anywhere: the account-menu
   // promo and the empty-chat hint both read this.
-  if (readDenBootstrapConfig().hideCloudSignin === true) return false;
+  if (readDenBootstrapConfig().disableCloud === true) return false;
   return isOpenWorkModelsPromoEligibleForDenBaseUrl(readDenSettings().baseUrl);
 }
 

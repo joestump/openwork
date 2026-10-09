@@ -8,13 +8,13 @@ import { aiProvidersDescription } from "../src/react-app/domains/settings/pages/
 import { buildCommandPaletteSettingsItems } from "../src/react-app/shell/command-palette-settings";
 import { DEFAULT_SHELL_CONFIG, resolveShellConfig } from "../src/react-app/shell/shell-config";
 
-// desktop-bootstrap.json `hideCloudSignin: true` means the install does not use
+// desktop-bootstrap.json `disableCloud: true` means the install does not use
 // OpenWork Cloud. It folds into shellConfig as cloudSignin, cloudFeatures and
 // notifications all off, and every Cloud-only surface reads one of those.
 
 describe("resolveShellConfig", () => {
-  test("hideCloudSignin: true turns off sign-in, Cloud features and the activity bell", () => {
-    const resolved = resolveShellConfig(DEFAULT_SHELL_CONFIG, { hideCloudSignin: true });
+  test("disableCloud: true turns off sign-in, Cloud features and the activity bell", () => {
+    const resolved = resolveShellConfig(DEFAULT_SHELL_CONFIG, { disableCloud: true });
     expect(resolved.cloudSignin).toBe(false);
     expect(resolved.cloudFeatures).toBe(false);
     expect(resolved.notifications).toBe(false);
@@ -24,7 +24,7 @@ describe("resolveShellConfig", () => {
 
   test("an absent key leaves the stored config untouched", () => {
     expect(resolveShellConfig(DEFAULT_SHELL_CONFIG, {})).toBe(DEFAULT_SHELL_CONFIG);
-    expect(resolveShellConfig(DEFAULT_SHELL_CONFIG, { hideCloudSignin: undefined })).toBe(DEFAULT_SHELL_CONFIG);
+    expect(resolveShellConfig(DEFAULT_SHELL_CONFIG, { disableCloud: undefined })).toBe(DEFAULT_SHELL_CONFIG);
   });
 
   test("bootstrap policy never re-enables something the stored config turned off", () => {
@@ -36,7 +36,7 @@ describe("resolveShellConfig", () => {
 
   test("the stored config object is not mutated", () => {
     const stored = { ...DEFAULT_SHELL_CONFIG };
-    resolveShellConfig(stored, { hideCloudSignin: true });
+    resolveShellConfig(stored, { disableCloud: true });
     expect(stored).toEqual(DEFAULT_SHELL_CONFIG);
   });
 

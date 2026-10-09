@@ -153,7 +153,7 @@ export type CommandPaletteProps = {
  */
 export function CommandPalette(props: CommandPaletteProps) {
   const platform = usePlatform();
-  // Without OpenWork Cloud (desktop-bootstrap.json hideCloudSignin), drop every
+  // Without OpenWork Cloud (desktop-bootstrap.json disableCloud), drop every
   // action that only reaches a Cloud surface, whatever the caller passed.
   const { config: shellConfig } = useShellConfig();
   const cloudFeatures = shellConfig.cloudFeatures;

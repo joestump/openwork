@@ -297,7 +297,7 @@ export function createWorkspaceStore({
       // absent key keeps today's behaviour. It never relaxes requireSignin:
       // a build or file that forces sign-in still gets the forced sign-in
       // gate, which is a separate surface.
-      ...(input?.hideCloudSignin === true ? { hideCloudSignin: true } : {}),
+      ...(input?.disableCloud === true ? { disableCloud: true } : {}),
       ...(brandAppName ? { brandAppName } : {}),
       ...(brandLogoUrl ? { brandLogoUrl } : {}),
       ...(brandIconUrl ? { brandIconUrl } : {}),
@@ -493,13 +493,13 @@ export function createWorkspaceStore({
   }
 
   async function setDesktopBootstrapConfig(config) {
-    // hideCloudSignin is a user preference, not part of any control-plane
+    // disableCloud is a user preference, not part of any control-plane
     // handoff, so a rewrite that does not mention it (sign-in, connect link,
     // control-plane URL change) keeps the value already on disk instead of
     // silently dropping it. An explicit boolean in `config` still wins.
-    const preserved = typeof config?.hideCloudSignin === "boolean"
+    const preserved = typeof config?.disableCloud === "boolean"
       ? config
-      : { ...config, hideCloudSignin: readDesktopBootstrapConfigSync().hideCloudSignin === true };
+      : { ...config, disableCloud: readDesktopBootstrapConfigSync().disableCloud === true };
     const normalized = normalizeDesktopBootstrapConfig(preserved);
     const outputPath = desktopBootstrapPath();
     const stamped = { ...normalized, writtenAt: new Date().toISOString() };

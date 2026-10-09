@@ -39,7 +39,7 @@ export const SETTINGS_TAB_WITHOUT_CONTROL: SettingsTab = "cloud-account";
 /**
  * Settings tabs that only work with an OpenWork Cloud account. An install that
  * does not use Cloud (shellConfig.cloudFeatures off, from desktop-bootstrap.json
- * hideCloudSignin) hides them everywhere this filter is read: the settings
+ * disableCloud) hides them everywhere this filter is read: the settings
  * sidebar, the compact menu, the command palette, and the blocked-tab redirect.
  */
 export const CLOUD_ONLY_SETTINGS_TABS: ReadonlySet<SettingsTab> = new Set<SettingsTab>([

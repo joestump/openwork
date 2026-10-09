@@ -410,7 +410,7 @@ type LibraryScreen =
 export function McpView(props: McpViewProps) {
   const cloudSession = useCloudSession();
   const denAuth = useDenAuth();
-  // Without OpenWork Cloud (desktop-bootstrap.json hideCloudSignin) the Library
+  // Without OpenWork Cloud (desktop-bootstrap.json disableCloud) the Library
   // is local only: no locked Cloud previews, no "Open Cloud account" empty
   // state, no Connections chip (it only ever lists organization connections).
   const { config: shellConfig } = useShellConfig();

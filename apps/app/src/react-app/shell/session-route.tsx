@@ -410,7 +410,7 @@ export function SessionRoute() {
   const denAuth = useDenAuth();
   const { config: shellConfig } = useShellConfig();
   // An install that does not use OpenWork Cloud (desktop-bootstrap.json
-  // hideCloudSignin) gets none of the surfaces below: each needs a Cloud
+  // disableCloud) gets none of the surfaces below: each needs a Cloud
   // account, signed out each is only an upsell, and their redirects below
   // send a direct URL home.
   const cloudFeatures = shellConfig.cloudFeatures;
