@@ -90,6 +90,18 @@ const LOOPBACK_FEED_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
  * Squirrel still refuses any bundle whose signature does not satisfy the
  * running app's designated requirement.
  */
+/**
+ * `OPENWORK_DISABLE_AUTO_UPDATE=1` turns the updater off for a packaged build
+ * that is not an official release, such as a local or fork build. The feeds
+ * are fixed to upstream releases, so such a build would otherwise download an
+ * official update that Squirrel then refuses to install over a bundle with a
+ * different identifier ("Could not locate update bundle for …"). Disabled, it
+ * behaves as an unpackaged build does: no checks, no downloads, no staging.
+ */
+export function autoUpdateDisabled(env = process.env) {
+  return typeof env.OPENWORK_DISABLE_AUTO_UPDATE === "string" && env.OPENWORK_DISABLE_AUTO_UPDATE.trim() === "1";
+}
+
 export function evalUpdaterFeedUrl(env = process.env) {
   const raw = typeof env.OPENWORK_EVAL_UPDATE_FEED_URL === "string" ? env.OPENWORK_EVAL_UPDATE_FEED_URL.trim() : "";
   if (!raw) return null;
@@ -382,7 +394,7 @@ export function registerUpdaterIpc({
   }
 
   async function ensureAutoUpdater() {
-    if (!app.isPackaged) return null;
+    if (!app.isPackaged || autoUpdateDisabled(env)) return null;
     if (!autoUpdaterLoadPromise) {
       autoUpdaterLoadPromise = (async () => {
         try {
