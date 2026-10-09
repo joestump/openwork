@@ -410,7 +410,11 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
           </button>
         }
       />
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Account menu"><MoreHorizontal size={14} /></Button>} />
+      {/* With Cloud disabled and signed out, the row itself is the plain Settings
+          entry that opens this same menu, so a second "…" trigger is redundant. */}
+      {hideSignIn && !signedIn && !restoringSession ? null : (
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Account menu"><MoreHorizontal size={14} /></Button>} />
+      )}
       <DropdownMenuContent side="top" align="start" className="w-72">
         {signedIn ? (
           <div className="px-2 py-1.5 text-[11px] text-muted-foreground">{user.email}</div>
