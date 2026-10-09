@@ -50,6 +50,7 @@ If you manage the fleet with MDM (Jamf, Intune, or similar), distribute the ente
 | `requireSignin` | Yes | Whether the app requires organization sign-in before use. Enterprise builds enforce sign-in regardless of this value. |
 | `requireActivation` | No | Ignored by enterprise builds, which always require activation. Lets a public build opt into the activation gate. |
 | `brandAppName`, `brandLogoUrl`, `brandIconUrl` | No | Organization branding shown in the app. |
+| `hideCloudSignin` | No | `true` hides the OpenWork Cloud sign-in prompts: the session header **Sign in** button, the sidebar account row's sign-in prompt, and the OpenWork Models promo. For installs that only use their own providers. It never relaxes `requireSignin`, and **Settings > Account** still offers sign-in. The app keeps it when it rewrites this file. |
 | `writtenAt` | Yes | ISO 8601 timestamp. When more than one bootstrap file exists, the valid configuration with the newest `writtenAt` wins. |
 
 Deployment details worth knowing:
