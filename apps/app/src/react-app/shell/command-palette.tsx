@@ -10,6 +10,7 @@ import type { Agent } from "@opencode-ai/sdk/v2/client";
 
 import type { OpenworkServerClient } from "@/app/lib/openwork-server";
 import { useOpencodeEngineControls } from "./opencode-engine-controls";
+import { useShellConfig } from "./shell-config";
 import { t } from "@/i18n";
 import {
   Command,
@@ -152,6 +153,10 @@ export type CommandPaletteProps = {
  */
 export function CommandPalette(props: CommandPaletteProps) {
   const platform = usePlatform();
+  // Without OpenWork Cloud (desktop-bootstrap.json hideCloudSignin), drop every
+  // action that only reaches a Cloud surface, whatever the caller passed.
+  const { config: shellConfig } = useShellConfig();
+  const cloudFeatures = shellConfig.cloudFeatures;
   // Key hints read the way this OS writes them: ⌃⇧M on macOS, Ctrl+Shift+M elsewhere.
   const shortcutOs = resolveShortcutOs(platform.os, typeof navigator === "undefined" ? "" : navigator.platform);
   const engine = useOpencodeEngineControls(props.engineClient, props.open);
@@ -362,6 +367,7 @@ export function CommandPalette(props: CommandPaletteProps) {
       developerMode: props.developerMode,
       capabilities: platform.capabilities,
       checkRestriction: checkDesktopRestriction,
+      cloudFeatures,
       onOpenSettings: (route) => {
         props.onClose();
         props.onOpenSettings(route);
@@ -373,6 +379,7 @@ export function CommandPalette(props: CommandPaletteProps) {
     }),
     [
       checkDesktopRestriction,
+      cloudFeatures,
       platform.capabilities,
       props.developerMode,
       props.onClose,
@@ -394,7 +401,7 @@ export function CommandPalette(props: CommandPaletteProps) {
           },
         }]
       : []),
-    ...(props.onOpenAutomations
+    ...(cloudFeatures && props.onOpenAutomations
       ? [{
           id: "automations.open",
           title: "Automations",
@@ -406,7 +413,7 @@ export function CommandPalette(props: CommandPaletteProps) {
           },
         }]
       : []),
-    ...(props.onOpenCalendar
+    ...(cloudFeatures && props.onOpenCalendar
       ? [{
           id: "calendar.open",
           title: "Calendar",
@@ -418,7 +425,7 @@ export function CommandPalette(props: CommandPaletteProps) {
           },
         }]
       : []),
-    ...(props.onOpenDashboard
+    ...(cloudFeatures && props.onOpenDashboard
       ? [{
           id: "dashboard.open",
           title: "Dashboard",
@@ -442,17 +449,19 @@ export function CommandPalette(props: CommandPaletteProps) {
           },
         }]
       : []),
-    {
-      id: "cloud.sign_in",
-      title: "Sign in to OpenWork Cloud",
-      keywords: ["login", "account", "organization", "org", "den", "cloud"],
-      group: ACTIONS_GROUP,
-      action: () => {
-        props.onClose();
-        props.onOpenSettings("/settings/cloud-account");
-      },
-    },
-  ], [props]);
+    ...(cloudFeatures
+      ? [{
+          id: "cloud.sign_in",
+          title: "Sign in to OpenWork Cloud",
+          keywords: ["login", "account", "organization", "org", "den", "cloud"],
+          group: ACTIONS_GROUP,
+          action: () => {
+            props.onClose();
+            props.onOpenSettings("/settings/cloud-account");
+          },
+        }]
+      : []),
+  ], [cloudFeatures, props]);
 
   const allRootItems = useMemo(
     () => [

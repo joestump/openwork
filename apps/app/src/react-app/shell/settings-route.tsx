@@ -124,6 +124,7 @@ import { CloudSessionProvider, useCloudSession } from "@/react-app/domains/setti
 import { useDenSession } from "@/react-app/domains/settings/cloud/use-den-session";
 import { useControlAction, type OpenworkControlAction } from "./control/control-provider";
 import { useBootState } from "./boot-state";
+import { useShellConfig } from "./shell-config";
 import { SettingsShell } from "@/react-app/domains/settings/shell/settings-shell";
 import { createExtensionsStore, useExtensionsStoreSnapshot } from "@/react-app/domains/settings/state/extensions-store";
 import { usePlatform } from "@/react-app/kernel/platform";
@@ -143,7 +144,7 @@ import {
   revealDesktopItemInDir,
 } from "@/app/lib/desktop";
 import {
-  SETTINGS_TAB_WITHOUT_CONTROL,
+  settingsTabFallback,
   desktopRestrictionNotice,
   isDesktopProviderBlocked,
   isSettingsTabAllowed,
@@ -476,8 +477,10 @@ function SettingsRouteContent(props: SettingsSurfaceProps = {}) {
   const selectedWorkspaceId = routeWorkspaceId || legacySelectedWorkspaceId;
   // The standalone Library takeover is not a settings surface; the
   // `allowControlSettings` policy only governs the settings shell.
+  const { config: shellConfig } = useShellConfig();
+  const cloudFeatures = shellConfig.cloudFeatures;
   const settingsTabBlocked = !props.standaloneExtensions
-    && !isSettingsTabAllowed({ tab: route.tab, checkRestriction: checkDesktopRestriction });
+    && !isSettingsTabAllowed({ tab: route.tab, checkRestriction: checkDesktopRestriction, cloudFeatures });
 
   useEffect(() => {
     if (!props.embedded) return;
@@ -485,8 +488,8 @@ function SettingsRouteContent(props: SettingsSurfaceProps = {}) {
       setEmbeddedPath(route.redirectPath);
       return;
     }
-    if (settingsTabBlocked) setEmbeddedPath(SETTINGS_TAB_WITHOUT_CONTROL);
-  }, [props.embedded, route.redirectPath, settingsTabBlocked]);
+    if (settingsTabBlocked) setEmbeddedPath(settingsTabFallback(cloudFeatures));
+  }, [cloudFeatures, props.embedded, route.redirectPath, settingsTabBlocked]);
 
   const navigateSettingsPath = useCallback((path: string) => {
     if (props.embedded) {
@@ -2128,8 +2131,8 @@ function SettingsRouteContent(props: SettingsSurfaceProps = {}) {
         ? workspaceExtensionsRoute(selectedWorkspaceId, extensionsPathForRoute(route))
         : globalExtensionsRoute(extensionsPathForRoute(route))
       : selectedWorkspaceId
-        ? workspaceSettingsRoute(selectedWorkspaceId, SETTINGS_TAB_WITHOUT_CONTROL)
-        : `/settings/${SETTINGS_TAB_WITHOUT_CONTROL}`;
+        ? workspaceSettingsRoute(selectedWorkspaceId, settingsTabFallback(cloudFeatures))
+        : `/settings/${settingsTabFallback(cloudFeatures)}`;
     return <Navigate to={target} replace state={location.state} />;
   }
 
@@ -2227,6 +2230,7 @@ function SettingsRouteContent(props: SettingsSurfaceProps = {}) {
             autoBusy={autoBusy}
             autoError={autoError}
             onSetAutoEnabled={autoClient ? setAutoEnabled : undefined}
+            cloudFeatures={cloudFeatures}
             organizationProviderIds={organizationProviderIds}
             onOpenDen={openProvidersInDen}
             cloudProvidersView={

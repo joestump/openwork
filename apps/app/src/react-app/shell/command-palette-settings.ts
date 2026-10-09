@@ -9,7 +9,7 @@ import {
   getWorkspaceSettingsTabs,
 } from "@/react-app/domains/settings/shell/settings-page";
 
-import { ADVANCED_SETTINGS_SECTIONS } from "@/react-app/domains/settings/advanced-sections";
+import { ADVANCED_SETTINGS_SECTIONS, CLOUD_ONLY_ADVANCED_SECTION_IDS } from "@/react-app/domains/settings/advanced-sections";
 
 import type { PaletteItem } from "./command-palette-search";
 
@@ -43,6 +43,8 @@ export function buildCommandPaletteSettingsItems(input: {
   capabilities: Pick<PlatformCapabilities, "autoUpdate">;
   /** Desktop policy checker; when `allowControlSettings` is blocked only the Cloud tabs remain. */
   checkRestriction?: DesktopAppRestrictionChecker;
+  /** False when the install does not use OpenWork Cloud: drops the Cloud tabs and Library › Connections. */
+  cloudFeatures?: boolean;
   onOpenSettings: (route: string) => void;
   onOpenExtensions: (section?: string) => void;
 }): PaletteItem[] {
@@ -52,7 +54,7 @@ export function buildCommandPaletteSettingsItems(input: {
     ...getWorkspaceSettingsTabs(),
     ...getGlobalSettingsTabs(input.developerMode, input.capabilities),
     ...CLOUD_SETTINGS_TABS,
-  ] satisfies SettingsTab[]).filter((tab) => isSettingsTabAllowed({ tab, checkRestriction }));
+  ] satisfies SettingsTab[]).filter((tab) => isSettingsTabAllowed({ tab, checkRestriction, cloudFeatures: input.cloudFeatures }));
 
   const tabItems = tabs.map((tab): PaletteItem => ({
     id: `settings:${tab}`,
@@ -70,7 +72,9 @@ export function buildCommandPaletteSettingsItems(input: {
     },
   }));
 
-  const libraryItems = LIBRARY_SECTIONS.map((section): PaletteItem => ({
+  const cloudHidden = input.cloudFeatures === false;
+  // Signed out, Library › Connections only ever lists organization connections.
+  const libraryItems = LIBRARY_SECTIONS.filter((section) => !(cloudHidden && section.slug === "connections")).map((section): PaletteItem => ({
     id: `settings:extensions/${section.slug}`,
     title: section.title,
     detail: section.detail,
@@ -81,7 +85,7 @@ export function buildCommandPaletteSettingsItems(input: {
   }));
 
   const advancedItems: PaletteItem[] = tabs.includes("advanced")
-    ? ADVANCED_SETTINGS_SECTIONS.map((section) => ({
+    ? ADVANCED_SETTINGS_SECTIONS.filter((section) => !(cloudHidden && CLOUD_ONLY_ADVANCED_SECTION_IDS.has(section.id))).map((section) => ({
         id: `settings:advanced/${section.id}`,
         title: section.title,
         keywords: section.keywords,

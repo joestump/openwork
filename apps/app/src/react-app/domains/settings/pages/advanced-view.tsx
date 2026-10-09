@@ -10,6 +10,7 @@ import type { OpencodeConnectStatus } from "@/app/types";
 import type { OpenworkServerClient, OpenworkCloudMcpHealth, OpenworkRuntimeConfigStatus, OpenworkServerStatus } from "@/app/lib/openwork-server";
 import { t } from "@/i18n";
 import { LayoutStack } from "../settings-layout";
+import { useShellConfig } from "../../../shell/shell-config";
 import type { useDenSession } from "../cloud/use-den-session";
 
 import { advancedLocalReducer, initialAdvancedLocalState } from "./advanced-view-state";
@@ -60,6 +61,10 @@ type AdvancedStatusTone = "ready" | "warning" | "error" | "neutral";
 
 export function AdvancedView(props: AdvancedViewProps) {
   const location = useLocation();
+  // Without OpenWork Cloud there is no organization server to point at and no
+  // Cloud MCP to diagnose (CLOUD_ONLY_ADVANCED_SECTION_IDS).
+  const { config: shellConfig } = useShellConfig();
+  const cloudFeatures = shellConfig.cloudFeatures;
   const viewRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sectionId = props.sectionId;
@@ -176,7 +181,7 @@ export function AdvancedView(props: AdvancedViewProps) {
   return (
     <div ref={viewRef}>
       <LayoutStack>
-        <AdvancedOrganizationServerSection
+        {cloudFeatures ? <AdvancedOrganizationServerSection
           authBusy={props.organizationServer.authBusy}
           baseUrl={props.organizationServer.baseUrl}
           baseUrlBusy={props.organizationServer.baseUrlBusy}
@@ -188,7 +193,7 @@ export function AdvancedView(props: AdvancedViewProps) {
           onResetBaseUrlToDefault={props.organizationServer.onResetBaseUrlToDefault}
           sessionBusy={props.organizationServer.sessionBusy}
           cloudMcpUrl={props.cloudMcpUrl}
-        />
+        /> : null}
 
         <AdvancedRuntimeSection
           clientStatusLabel={clientStatusLabel}
@@ -199,10 +204,10 @@ export function AdvancedView(props: AdvancedViewProps) {
           openworkDetailLines={openworkDetailLines}
         />
 
-        <AdvancedCloudMcpDiagnosticsSection
+        {cloudFeatures ? <AdvancedCloudMcpDiagnosticsSection
           cloudMcpHealth={props.cloudMcpHealth}
           onRefresh={props.refreshCloudMcpHealth}
-        />
+        /> : null}
 
         <AdvancedRuntimeConfigSourcesSection
           busy={props.busy}

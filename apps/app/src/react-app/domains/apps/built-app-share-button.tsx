@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLibraryCloud } from "../settings/use-library-cloud";
 import { LibrarySharePage } from "../settings/pages/library-share-page";
 import { useAppsClient } from "./use-apps";
+import { useShellConfig } from "@/react-app/shell/shell-config";
 
 export function BuiltAppShareButton({
   pluginId,
@@ -20,6 +21,10 @@ export function BuiltAppShareButton({
   title: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Sharing goes through an OpenWork Cloud organization; an install that does
+  // not use Cloud has no one to share with, only a "Sign in to share" dialog.
+  const { config: shellConfig } = useShellConfig();
+  if (!shellConfig.cloudFeatures) return null;
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>

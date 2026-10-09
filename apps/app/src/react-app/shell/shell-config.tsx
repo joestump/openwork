@@ -21,6 +21,13 @@ export type ShellConfig = {
   feedbackButton: boolean;
   /** Show the Cloud sign-in button when not signed in. */
   cloudSignin: boolean;
+  /**
+   * Show surfaces that only work with an OpenWork Cloud account: Dashboard,
+   * Automations, saved apps, the Account and Usage settings, organization
+   * providers, cloud Library previews, and every sign-in upsell. Off means
+   * this install does not use OpenWork Cloud at all.
+   */
+  cloudFeatures: boolean;
   /** Show the welcome/onboarding page for new users. */
   welcomePage: boolean;
   /** Show starter task cards in empty sessions. */
@@ -46,6 +53,7 @@ export const DEFAULT_SHELL_CONFIG: ShellConfig = {
   docsButton: true,
   feedbackButton: true,
   cloudSignin: true,
+  cloudFeatures: true,
   welcomePage: true,
   starterCards: true,
   modelPicker: true,
@@ -84,16 +92,19 @@ function writeShellConfig(config: ShellConfig): void {
 /**
  * The config the shell actually renders: the stored (localStorage) config with
  * install-level policy from desktop-bootstrap.json applied on top. Bootstrap
- * policy only ever hides: `hideCloudSignin: true` forces `cloudSignin` off, and
- * an absent key leaves the stored value alone. The stored config is never
- * rewritten with it, so removing the key from the file restores the prompts.
+ * policy only ever hides: `hideCloudSignin: true` means the install does not
+ * use OpenWork Cloud, so it forces off the sign-in prompts (`cloudSignin`),
+ * every surface that needs a Cloud account (`cloudFeatures`), and the activity
+ * bell, whose only writer is the Cloud member-activity sync. An absent key
+ * leaves the stored value alone. The stored config is never rewritten with it,
+ * so removing the key from the file restores everything.
  */
 export function resolveShellConfig(
   stored: ShellConfig,
   bootstrap: Pick<DenBootstrapConfig, "hideCloudSignin">,
 ): ShellConfig {
   if (bootstrap.hideCloudSignin !== true) return stored;
-  return { ...stored, cloudSignin: false };
+  return { ...stored, cloudSignin: false, cloudFeatures: false, notifications: false };
 }
 
 function readBootstrapHidesCloudSignin(): boolean {

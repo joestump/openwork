@@ -131,6 +131,7 @@ import {
 } from "../library-sharing";
 import { seededConnectorDraft } from "../../session/surface/composer/connector-token";
 import { useStartSeededChat } from "../../../shell/use-start-seeded-chat";
+import { useShellConfig } from "../../../shell/shell-config";
 import { libraryConnectorCues } from "../library-connector-cues";
 import { useLibraryCloud, type LibraryEditableSkill, type LibraryShareTarget } from "../use-library-cloud";
 import { AddLibraryItemPage } from "./add-library-item-page";
@@ -409,6 +410,11 @@ type LibraryScreen =
 export function McpView(props: McpViewProps) {
   const cloudSession = useCloudSession();
   const denAuth = useDenAuth();
+  // Without OpenWork Cloud (desktop-bootstrap.json hideCloudSignin) the Library
+  // is local only: no locked Cloud previews, no "Open Cloud account" empty
+  // state, no Connections chip (it only ever lists organization connections).
+  const { config: shellConfig } = useShellConfig();
+  const cloudFeatures = shellConfig.cloudFeatures;
   const denBaseUrl = readDenSettings().baseUrl;
   const useRoutedDetail = typeof props.onDetailIdChange === "function";
   const [detailTarget, setDetailTarget] = useState<ExtensionDetailTarget | null>(null);
@@ -556,7 +562,7 @@ export function McpView(props: McpViewProps) {
     libraryAddAction(kind, libraryAddOptions) !== null
   ));
   const inventoryError = props.inventoryError ?? props.orgMcpError ?? null;
-  const cloudIssue = denAuth.status === "checking"
+  const cloudIssue = !cloudFeatures ? undefined : denAuth.status === "checking"
     ? t("den.checking_session")
     : denAuth.status === "unavailable"
       ? t("extensions.cloud_unavailable")
@@ -1845,7 +1851,7 @@ export function McpView(props: McpViewProps) {
       search={search}
       sectionMeta={sectionMeta}
       onlyNeedsSignIn={onlyNeedsSignIn}
-      signedOut={signedOut}
+      signedOut={signedOut && cloudFeatures}
       onSignUp={props.onOpenCloudAccount}
       emptyState={(
         <LibraryEmptyState
@@ -1854,7 +1860,7 @@ export function McpView(props: McpViewProps) {
           cloudIssue={cloudIssue}
           onAdd={!addDisabledReason && libraryAddKinds[0] ? () => handleAddKind(libraryAddKinds[0]) : undefined}
           onClearSearch={() => setSearch("")}
-          onOpenCloudAccount={!libraryCloudSignedIn || !activeOrganizationId ? props.onOpenCloudAccount : undefined}
+          onOpenCloudAccount={cloudFeatures && (!libraryCloudSignedIn || !activeOrganizationId) ? props.onOpenCloudAccount : undefined}
           onRefresh={denAuth.status === "unavailable" || inventoryError ? props.onRefresh : undefined}
           error={inventoryError}
         />
@@ -2002,7 +2008,7 @@ export function McpView(props: McpViewProps) {
       )}
 
       <div className="mb-5 flex flex-wrap items-center gap-1.5" aria-label={t("extensions.filters_label")}>
-        {extensionInventoryFilters.map((f) => {
+        {extensionInventoryFilters.filter((f) => cloudFeatures || f !== "connection").map((f) => {
           const selected = filter === f;
           return (
             <button

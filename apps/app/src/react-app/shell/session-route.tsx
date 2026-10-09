@@ -408,27 +408,33 @@ export function SessionRoute() {
   const platform = usePlatform();
   const toggleSidebar = useUiStateStore((state) => state.toggleSidebar);
   const denAuth = useDenAuth();
+  const { config: shellConfig } = useShellConfig();
+  // An install that does not use OpenWork Cloud (desktop-bootstrap.json
+  // hideCloudSignin) gets none of the surfaces below: each needs a Cloud
+  // account, signed out each is only an upsell, and their redirects below
+  // send a direct URL home.
+  const cloudFeatures = shellConfig.cloudFeatures;
   // On desktop, Dashboard and Automations stay in the sidebar while signed
   // out: each page explains that it needs OpenWork Cloud and calls nothing.
   const denAuthChecking = denAuth.status === "checking";
   const signedOutDesktopSurfaces = isDesktopRuntime() && !denAuthChecking && !denAuth.isSignedIn;
-  const dashboardSurfaceAvailable = mcpAppsDashboardEnabled || signedOutDesktopSurfaces;
+  const dashboardSurfaceAvailable = cloudFeatures && (mcpAppsDashboardEnabled || signedOutDesktopSurfaces);
   const dashboardRouteActive = dashboardSurfaceAvailable && dashboardRouteRequested;
   const dashboardWorkspaceRoute = dashboardRouteRequested
     && (dashboardAvailabilityLoading || dashboardSurfaceAvailable);
-  const { config: shellConfig } = useShellConfig();
   const activityRouteActive = shellConfig.notifications && activityRouteRequested;
   const local = useLocal();
   const automationDeploymentEnabled = useAutomationDeploymentEnabled();
   // Desktop and Web share one Automations surface; the runtime only decides
   // the placement of what each creates. Den's deployment flag stays the gate.
   const automationsEnabled = automationDeploymentEnabled;
-  const automationsSurfaceAvailable = automationsEnabled || signedOutDesktopSurfaces;
+  const automationsSurfaceAvailable = cloudFeatures && (automationsEnabled || signedOutDesktopSurfaces);
   const automationsRouteActive = automationsSurfaceAvailable && automationsRouteRequested;
   // The Calendar is an Automations view behind the automationCalendar feature.
   const calendarFeature = useCalendarFeature(useAutomationsDenContext());
-  const calendarSurfaceAvailable = automationsEnabled && denAuth.isSignedIn && calendarFeature.data === true;
-  const calendarAvailabilityPending = denAuthChecking || (automationsEnabled && denAuth.isSignedIn && calendarFeature.isLoading);
+  const calendarSurfaceAvailable = cloudFeatures && automationsEnabled && denAuth.isSignedIn && calendarFeature.data === true;
+  const calendarAvailabilityPending = cloudFeatures
+    && (denAuthChecking || (automationsEnabled && denAuth.isSignedIn && calendarFeature.isLoading));
   const calendarRouteActive = calendarSurfaceAvailable && calendarRouteRequested;
   const denSettings = readDenSettings();
   const sessionDraftScope = resolveSessionDraftScope({
@@ -441,6 +447,10 @@ export function SessionRoute() {
   useEffect(() => {
     if (activityRouteRequested && !shellConfig.notifications) navigate("/", { replace: true });
   }, [activityRouteRequested, navigate, shellConfig.notifications]);
+  useEffect(() => {
+    // Saved apps are Cloud artifacts; signed out they only say "Sign in".
+    if (appsRouteActive && !cloudFeatures) navigate("/", { replace: true });
+  }, [appsRouteActive, cloudFeatures, navigate]);
   useEffect(() => {
     if (!automationsRouteRequested || denAuthChecking || automationsSurfaceAvailable) return;
     navigate("/", { replace: true });
