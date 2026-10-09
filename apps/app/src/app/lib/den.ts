@@ -213,6 +213,12 @@ export type DenBootstrapConfig = DenBaseUrls & {
   source: DenBootstrapSource;
   requireSignin: boolean;
   requireActivation?: boolean;
+  /**
+   * Local display preference from desktop-bootstrap.json: hide the OpenWork
+   * Cloud sign-in prompts (session header button, sidebar account row) for an
+   * install that only uses its own providers. Present only when true.
+   */
+  hideCloudSignin?: boolean;
   brandAppName?: string | null;
   brandLogoUrl?: string | null;
   brandIconUrl?: string | null;
@@ -918,6 +924,7 @@ function resolveDenBootstrapConfig(
     apiBaseUrl?: string | null;
     requireSignin?: boolean | null;
     requireActivation?: boolean | null;
+    hideCloudSignin?: boolean | null;
     brandAppName?: string | null;
     brandLogoUrl?: string | null;
     brandIconUrl?: string | null;
@@ -936,6 +943,7 @@ function resolveDenBootstrapConfig(
     ...(typeof input.requireActivation === "boolean"
       ? { requireActivation: input.requireActivation }
       : {}),
+    ...(input.hideCloudSignin === true ? { hideCloudSignin: true } : {}),
     ...(input.brandAppName?.trim() ? { brandAppName: input.brandAppName.trim().slice(0, 64) } : {}),
     ...(input.brandLogoUrl?.trim() ? { brandLogoUrl: input.brandLogoUrl.trim() } : {}),
     ...(input.brandIconUrl?.trim() ? { brandIconUrl: input.brandIconUrl.trim() } : {}),
@@ -1093,6 +1101,7 @@ function getPendingBootstrapConfig(next: DenSettings): DenBootstrapConfig | null
     apiBaseUrl: next.apiBaseUrl ?? previous.apiBaseUrl,
     requireSignin: previous.requireSignin,
     requireActivation: previous.requireActivation,
+    hideCloudSignin: previous.hideCloudSignin,
     brandAppName: previous.brandAppName,
     brandLogoUrl: previous.brandLogoUrl,
     brandIconUrl: previous.brandIconUrl,
@@ -1332,6 +1341,13 @@ export async function setDenBootstrapConfig(
       next.enterpriseActivation !== undefined
         ? next.enterpriseActivation
         : previous.enterpriseActivation,
+    // A display preference, not control-plane state: callers rewriting the
+    // bootstrap for a sign-in, handoff or URL change never mention it, and
+    // must not silently drop it. An explicit boolean still wins.
+    hideCloudSignin:
+      typeof next.hideCloudSignin === "boolean"
+        ? next.hideCloudSignin
+        : previous.hideCloudSignin,
   });
 
   if (isDesktopRuntime()) {
@@ -1345,6 +1361,10 @@ export async function setDenBootstrapConfig(
       ...(typeof normalized.requireActivation === "boolean"
         ? { requireActivation: normalized.requireActivation }
         : {}),
+      // Sent only when true. Omitting it lets the shell keep what is on disk,
+      // so a stale renderer snapshot can never clear a value written to the
+      // file by hand (or by a dotfiles manager) while the app was running.
+      ...(normalized.hideCloudSignin ? { hideCloudSignin: true } : {}),
       ...(normalized.brandAppName ? { brandAppName: normalized.brandAppName } : {}),
       ...(normalized.brandLogoUrl ? { brandLogoUrl: normalized.brandLogoUrl } : {}),
       ...(normalized.brandIconUrl ? { brandIconUrl: normalized.brandIconUrl } : {}),

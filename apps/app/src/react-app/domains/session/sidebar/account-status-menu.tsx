@@ -285,14 +285,18 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
     status: denAuth.status,
     hasUser: user !== null,
   });
+  // hideCloudSignin (desktop-bootstrap.json) folds into shellConfig.cloudSignin.
+  // Signed out with the prompts hidden, the row stays as the entry point to
+  // Settings, Docs and Feedback, but stops asking for an OpenWork Cloud account.
+  const hideSignIn = !shellConfig.cloudSignin;
   const accountLabel = signedIn
     ? user.name?.trim() || user.email
-    : restoringSession ? "OpenWork Cloud" : "Sign in";
+    : restoringSession ? "OpenWork Cloud" : hideSignIn ? t("status.settings") : "Sign in";
   // The sidebar row shows the name only; the email stays inside the account
   // menu so it is not permanently on screen (matches Claude Code and Codex).
   const accountDetail = signedIn
     ? "OpenWork Cloud"
-    : restoringSession ? "Restoring your session" : "Sync with OpenWork Cloud";
+    : restoringSession ? "Restoring your session" : hideSignIn ? null : "Sync with OpenWork Cloud";
 
   const runtimeStatus = props.showConnectionStatus
     ? resolveRuntimeStatus({
@@ -379,6 +383,10 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
                   {accountInitials(user.name, user.email)}
                 </span>
+              ) : hideSignIn && !restoringSession ? (
+                <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground">
+                  <Settings size={14} />
+                </span>
               ) : (
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground">
                   <UserRound size={13} />
@@ -388,9 +396,11 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
                 <span className="block truncate text-[12px] font-medium text-sidebar-foreground">
                   {accountLabel}
                 </span>
-                <span className="block truncate text-[10.5px] leading-tight text-muted-foreground">
-                  {accountDetail}
-                </span>
+                {accountDetail ? (
+                  <span className="block truncate text-[10.5px] leading-tight text-muted-foreground">
+                    {accountDetail}
+                  </span>
+                ) : null}
               </span>
               {connectNeedsAttention ? (
                 <span className="flex size-4 shrink-0 items-center justify-center">
@@ -522,7 +532,7 @@ export function AccountStatusMenu(props: AccountStatusMenuProps) {
             <LogOut className="size-3.5" />
             Log out
           </DropdownMenuItem>
-        ) : restoringSession ? null : (
+        ) : restoringSession || hideSignIn ? null : (
           <div
             className="flex flex-col gap-2 px-2 py-2"
             onPointerDown={(event) => event.stopPropagation()}
